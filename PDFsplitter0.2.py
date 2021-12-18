@@ -2,11 +2,12 @@
 from tkinter import Tk, Label, Button, Menu, filedialog, messagebox
 import os
 import webbrowser
-from PyPDF2 import PdfFileReader, PdfFileWriter
+from PyPDF2 import PdfFileReader, PdfFileWriter, PdfFileMerger, pdf
 
 
 #Funcionamento do programa
 def split():
+    
     pdf_file = filedialog.askopenfilename(title='Selecione o PDF')
     
     #Coletar apenas o nome base do arquivo PDF e colocar traço antes do num
@@ -36,7 +37,27 @@ def split():
     msg_box = messagebox.askyesno('Exclusão', 'Deseja excluir o arquivo de origem?')
     if msg_box == True:
         os.remove(pdf_file)
+
+def merge():
+
+    pdf_files = filedialog.askopenfilenames(title='Selecione os arquivos PDF que deseja fundir')
+    lista = list(pdf_files)
+    merge = PdfFileMerger()
     
+    #Selecionar pasta de saída
+    messagebox.showinfo("Divisor de PDFs", "A seguir: Dê dois cliques na pasta que deseja salvar e aperte OK.")
+    output_path = filedialog.askdirectory(title='Selecione a pasta')
+
+    for item in lista:
+        if item.endswith('pdf'):
+            merge.append(item)
+    
+    merge.write(f'{output_path}/ResultadoFusao.pdf')
+    merge.close()
+
+    #Mensagem de conclusão
+    messagebox.showinfo("Fusão de PDFs", "Operação concluída.")
+
 def callback(url):
    webbrowser.open_new_tab(url)
 
@@ -50,7 +71,7 @@ def about():
     github_link = Label(aboutwindow, text="Contribua com o projeto pelo Github!", font= ('Helvetica 10 underline'), fg='blue', cursor='hand2')
     github_link.bind('<Button-1>', lambda e: callback(url='https://github.com/Vander88/PDFsplitter'))
     github_link.grid(column=0, row=3)
-
+    versiontxt = Label(aboutwindow, text="versão beta 0.3", font=("Arial", 7)).grid(column=0, row=4)
     aboutwindow.after(5000, lambda: aboutwindow.destroy()) # Destrói a janela após 5 segundos
    
 #Criar janela persistente, tamanho da janela e posição
@@ -70,17 +91,16 @@ window.geometry(f'{app_w}x{app_h}+{int(x)}+{int(y)}')
 window.resizable(False, False)
 
 #Intro
-maintxt = Label(window, text="Bem-vindo, clique abaixo para iniciar:").grid(column=0, row=0, padx=20, pady=5)
-versiontxt = Label(window, text="versão beta 0.2 ", font=("Arial", 7)).grid(column=0, row=2, pady= 10)
+welcome_txt = Label(window, text="Selecione uma das opções abaixo:").grid(column=0,columnspan=10, row= 0, pady=5, padx=30)
 
 #Um botão escrito selecionar pdf
-mainbutton = Button(window, text="Selecionar arquivo", command=split).grid(column=0, row=1, padx=5, pady=5)
+split_btn = Button(window, text="Separar PDF", command=split, width= 8, height= 2).grid(column= 1, row=1, padx= 30)
+merge_btn = Button(window, text="Fundir PDF", command=merge, width= 8, height= 2).grid(column= 3, row=1)
 
 #Menu "Opções>sair"
 menubar = Menu(window)
 menuoptions = Menu(menubar, tearoff=0)
 menuoptions.add_command(label="Fechar", command=window.quit)
-menubar.add_cascade(label="Opções", menu=menuoptions)
 
 #Menu "Sobre> versão, gpl> aba de creditos a mim"
 menuAbout = Menu(menubar, tearoff=0)
@@ -90,11 +110,3 @@ window.config(menu=menubar)
 
 
 window.mainloop()
-
-
-#Verificando se o arquivo changelog já existe
-if os.path.isfile('changelog.txt') != True:
-    changelog_lines = ('========== Changelog ==========', '', '# Versão 0.2', '- Adição da função de remover o arquivo de origem', '', '# Versão 0.1', '- Primeira versão de testes')
-    with open ('changelog.txt', 'x') as archive:
-        for lines in changelog_lines:
-            archive.write(str(lines) + '\n')
